@@ -1,0 +1,243 @@
+USE master;
+GO
+
+-- Eliminar base de datos si existe (modo seguro)
+IF DB_ID('dbLavanderia') IS NOT NULL
+BEGIN
+    ALTER DATABASE dbLavanderia SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE dbLavanderia;
+END
+GO
+
+-- Crear base de datos
+CREATE DATABASE dbLavanderia;
+GO
+
+USE dbLavanderia;
+GO
+
+-- =============================================
+-- TABLA CLIENTE
+-- =============================================
+CREATE TABLE tblCliente (
+    DNI VARCHAR(8) PRIMARY KEY,
+    cliApellidoPaterno VARCHAR(35) NOT NULL,
+    cliApellidoMaterno VARCHAR(35),
+    cliNombres VARCHAR(50) NOT NULL,
+    cliSexo CHAR(1) CHECK (cliSexo IN ('M','F')) NOT NULL,
+    cliFechaNacimiento DATETIME NOT NULL,
+    cliDireccion VARCHAR(180),
+    cliDistrito VARCHAR(50),
+    cliTelefono VARCHAR(15),
+    cliEmail VARCHAR(80),
+    cliFechaRegistro DATE DEFAULT GETDATE()
+);
+GO
+
+-- =============================================
+-- TABLA EMPLEADO
+-- =============================================
+CREATE TABLE tblEmpleado (
+    Empleado_ID INT PRIMARY KEY IDENTITY(1,1),
+    empApellidoPaterno VARCHAR(35) NOT NULL,
+    empApellidoMaterno VARCHAR(35),
+    empNombres VARCHAR(50) NOT NULL,
+    empTelefono VARCHAR(15),
+    empCargo VARCHAR(30),
+    empSexo CHAR(1) CHECK (empSexo IN ('M','F')) NOT NULL,
+    empFechaIngreso DATETIME NOT NULL,
+    empSueldo MONEY NOT NULL
+);
+GO
+
+-- =============================================
+-- TABLA SERVICIO
+-- =============================================
+CREATE TABLE tblServicio (
+    Servicio_ID VARCHAR(5) PRIMARY KEY,
+    serNombre VARCHAR(50) NOT NULL,
+    serDescripcion VARCHAR(100),
+    serPrecioUnitario DECIMAL(10,2) NOT NULL CHECK (serPrecioUnitario >= 0)
+);
+GO
+
+-- =============================================
+-- TABLA SUCURSAL
+-- =============================================
+CREATE TABLE tblSucursal (
+    Sucursal_ID VARCHAR(5) PRIMARY KEY,
+    sucNombre VARCHAR(50) NOT NULL,
+    sucDireccion VARCHAR(100) NOT NULL,
+    sucTelefono VARCHAR(12)
+);
+GO
+
+-- =============================================
+-- TABLA PEDIDO
+-- =============================================
+CREATE TABLE tblPedido (
+    Pedido_ID VARCHAR(5) PRIMARY KEY,
+    pedFechaRecepcion DATE NOT NULL,
+    pedFechaEntrega DATE NOT NULL,
+    pedEstadoPedido VARCHAR(20) NOT NULL CHECK (pedEstadoPedido IN ('Pendiente','En proceso','Entregado','Cancelado')),
+    DNI VARCHAR(8) NOT NULL,
+    Empleado_ID INT NOT NULL,
+    Sucursal_ID VARCHAR(5) NOT NULL,
+    FOREIGN KEY (DNI) REFERENCES tblCliente(DNI),
+    FOREIGN KEY (Empleado_ID) REFERENCES tblEmpleado(Empleado_ID),
+    FOREIGN KEY (Sucursal_ID) REFERENCES tblSucursal(Sucursal_ID)
+);
+GO
+
+-- =============================================
+-- TABLA VENTA
+-- =============================================
+CREATE TABLE tblVenta (
+    Venta_ID VARCHAR(5) PRIMARY KEY,
+    venFecha DATE DEFAULT GETDATE(),
+    venMonto DECIMAL(10,2) NOT NULL CHECK (venMonto >= 0),
+    venMetodo VARCHAR(30) NOT NULL,
+    venEstado VARCHAR(20) NOT NULL CHECK (venEstado IN ('Pagado','Pendiente','Anulado')),
+    venObservaciones VARCHAR(100),
+    Pedido_ID VARCHAR(5) NOT NULL,
+    FOREIGN KEY (Pedido_ID) REFERENCES tblPedido(Pedido_ID)
+);
+GO
+
+-- =============================================
+-- TABLA INTERMEDIA PEDIDO-SERVICIO
+-- =============================================
+CREATE TABLE tblPedidoXtblServicio (
+    Pedido_ID VARCHAR(5) NOT NULL,
+    Servicio_ID VARCHAR(5) NOT NULL,
+    PRIMARY KEY (Pedido_ID, Servicio_ID),
+    FOREIGN KEY (Pedido_ID) REFERENCES tblPedido(Pedido_ID),
+    FOREIGN KEY (Servicio_ID) REFERENCES tblServicio(Servicio_ID)
+);
+GO
+-- =============================================
+-- DATOS TABLA CLIENTE
+-- =============================================
+
+SET DATEFORMAT DMY
+
+INSERT INTO tblCliente VALUES (60730990,'TORRES','LUJAN','CARLOS','M','27/08/1998',
+'Av.Carmen del solar 144','EL TAMBO','980814549','carlos@gmail.com','22/08/2025')
+
+INSERT INTO tblCliente VALUES (75943830,'PISCO','SOTO','ALBERTO','M','22/06/1997',
+'Av.San carlos 543','EL TAMBO','945124342','alberto@gmail.com','30/08/2025')
+
+INSERT INTO tblCliente VALUES (62452012,'QUISPE','CHAVES','ANTONIO','M','04/10/1997',
+'Av.Palian 234','HUANCAYO','946434218','antonio@gmail.com','31/08/2025')
+
+INSERT INTO tblCliente VALUES (52545685,'RONDINEL','QUISPE','LIZ','F','04/08/1996',
+'Av.Palian con progreso','HUANCAYO','952514206','liz@gmail.com','31/08/2025')
+
+INSERT INTO tblCliente VALUES (65485776,'SANTOS','PEREZ','LUZ MARIA','F','12/04/2000',
+'Av.Santivañes 154','EL TAMBO','900261035','luzmaria@gmail.com','02/09/2025')
+
+
+-- =============================================
+-- DATOS TABLA EMPLEADO
+-- =============================================
+
+INSERT INTO tblEmpleado VALUES ('JIMENES','LOPEZ','SANTIAGO','902153204',
+'DELIVERY','M','12/08/2024',1100)
+
+INSERT INTO tblEmpleado VALUES ('CHAVES','TORRES','JHERSON','912741200',
+'ENCARGADO DE CAJA','M','10/11/2024',1200)
+
+INSERT INTO tblEmpleado VALUES ('SOTO','PEREZ','KATIA','912856963',
+'ENCARGADA DE SECADO','F','30/11/2024',1000)
+
+INSERT INTO tblEmpleado VALUES ('QUISPE','MENDOZA','DANIELA','947000256',
+'ENCARGADA DE LAVADO','F','12/01/2025',1250)
+
+INSERT INTO tblEmpleado VALUES ('MAMANI','MARTINEZ','ROSIO','912014006',
+'RECEPCIONISTA','F','20/04/2025',1000)
+
+
+-- =============================================
+-- DATOS TABLA SERVICIO
+-- =============================================
+
+INSERT INTO tblServicio VALUES ('S01','LAVADO DE PRENDAS','Lavado con detergente
+y suavisante','8.50')
+
+INSERT INTO tblServicio VALUES ('S02','PLANCHADO','Planchado Profecional con Vapor 
+','5.00')
+
+INSERT INTO tblServicio VALUES ('S03','LAVADO EN SECO','Lavado Especial para Prendas
+Delicadas','12.00')
+
+INSERT INTO tblServicio VALUES ('S04','LIMPIEZA DE EDREDONES','Lavado Profundo y 
+desinfeccion','25.00')
+
+INSERT INTO tblServicio VALUES ('S05','LAVADO DE ALFOMBRAS','Lavado y Aspirado 
+Industrial','30.00')
+
+-- =============================================
+-- DATOS TABLA SUCURSAL
+-- =============================================
+
+INSERT INTO tblSucursal VALUES ('SU001','A&A El TAMBO','AV.San Carlos 1225','986547854')
+
+INSERT INTO tblSucursal VALUES ('SU002','A&A HUANCAYO','AV.San Carlos 345','978654532')
+
+INSERT INTO tblSucursal VALUES ('SU003','A&A CHILCA','AV.Coto Coto 546','973512645')
+
+-- =============================================
+-- DATOS TABLA PEDIDO
+-- =============================================
+
+
+INSERT INTO tblPedido VALUES ('P0001','10/04/2025','11/04/2025',
+'En proceso',60730990,'4','SU001')
+
+INSERT INTO tblPedido VALUES ('P0002','11/04/2025','11/04/2025',
+'Cancelado',75943830,'5','SU001')
+
+INSERT INTO tblPedido VALUES ('P0003','12/04/2025','15/04/2025',
+'Entregado',62452012,'2','SU002')
+
+INSERT INTO tblPedido VALUES ('P0004','12/04/2025','14/04/2025',
+'Pendiente',62452012,'2','SU002')
+
+INSERT INTO tblPedido VALUES ('P0005','18/04/2025','22/04/2025',
+'Cancelado',52545685,'3','SU001')
+
+-- =============================================
+-- DATOS TABLA VENTA
+-- =============================================
+
+
+INSERT INTO tblVenta VALUES ('V0001','10/04/2025',25,'EFECTIVO', 'Pagado',
+'Prenda con mancha de vino en el cuello requiere tratamiento especial',
+'P0001')
+
+INSERT INTO tblVenta VALUES ('V0002','11/04/2025',8.50,'EFECTIVO','Anulado',
+'Cliente cancelo por motivo de viaje imprevisto','P0002')
+
+INSERT INTO tblVenta VALUES ('V0003','12/04/2025',30,'TARJETA','Pagado',
+'Cliente pidio entrega a domicilio','P0003')
+
+INSERT INTO tblVenta VALUES ('V0004','13/04/2025',15,'TARJETA','Pendiente',
+'Atendido en tienda principal','P0004')
+
+INSERT INTO tblVenta VALUES ('V0005','18/04/2025',25,'YAPE','Anulado',
+'Pago duplicado por error','P0005')
+
+-- =============================================
+-- DATOS INTERMEDIA PEDIDO-SERVICIO
+-- =============================================
+
+
+INSERT INTO tblPedidoXtblServicio VALUES ('P0001','S03')
+
+INSERT INTO tblPedidoXtblServicio VALUES ('P0001','S01')
+
+INSERT INTO tblPedidoXtblServicio VALUES ('P0002','S01')
+
+INSERT INTO tblPedidoXtblServicio VALUES ('P0003','S05')
+
+INSERT INTO tblPedidoXtblServicio VALUES ('P0004','S03')
